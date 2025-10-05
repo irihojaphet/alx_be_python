@@ -1,24 +1,89 @@
-from library_management import Book, Library
+# library_management.py
 
-def main():
-    # Setup a small library
-    library = Library()
-    library.add_book(Book("Brave New World", "Aldous Huxley"))
-    library.add_book(Book("1984", "George Orwell"))
+from __future__ import annotations
+from typing import List
 
-    # Initial list of available books
-    print("Available books after setup:")
-    library.list_available_books()
 
-    # Simulate checking out a book
-    library.check_out_book("1984")
-    print("\nAvailable books after checking out '1984':")
-    library.list_available_books()
+class Book:
+    """
+    A simple book with public title/author and a private availability flag.
+    """
 
-    # Simulate returning a book
-    library.return_book("1984")
-    print("\nAvailable books after returning '1984':")
-    library.list_available_books()
+    def __init__(self, title: str, author: str) -> None:
+        self.title = title                   # public
+        self.author = author                 # public
+        self._is_checked_out: bool = False   # "private" by convention
 
-if __name__ == "__main__":
-    main()
+    def check_out(self) -> bool:
+        """
+        Mark the book as checked out if available.
+        Returns True if the state changed, False if it was already checked out.
+        """
+        if not self._is_checked_out:
+            self._is_checked_out = True
+            return True
+        return False
+
+    def return_book(self) -> bool:
+        """
+        Mark the book as returned if it was checked out.
+        Returns True if the state changed, False otherwise.
+        """
+        if self._is_checked_out:
+            self._is_checked_out = False
+            return True
+        return False
+
+    @property
+    def is_checked_out(self) -> bool:
+        """Read-only view of checkout state."""
+        return self._is_checked_out
+
+    def __str__(self) -> str:
+        return f"{self.title} by {self.author}"
+
+
+class Library:
+    """
+    Manages a collection of Book instances.
+    """
+
+    def __init__(self) -> None:
+        self._books: List[Book] = []  # private list of books
+
+    def add_book(self, book: Book) -> None:
+        """Add a Book to the collection."""
+        if not isinstance(book, Book):
+            raise TypeError("Only Book instances can be added.")
+        self._books.append(book)
+
+    def check_out_book(self, title: str) -> bool:
+        """
+        Find the first available book with the given title (case-insensitive)
+        and check it out. Returns True if successful, False otherwise.
+        """
+        target = title.strip().lower()
+        for b in self._books:
+            if b.title.lower() == target and not b.is_checked_out:
+                return b.check_out()
+        return False
+
+    def return_book(self, title: str) -> bool:
+        """
+        Find the first checked-out book with the given title (case-insensitive)
+        and return it. Returns True if successful, False otherwise.
+        """
+        target = title.strip().lower()
+        for b in self._books:
+            if b.title.lower() == target and b.is_checked_out:
+                return b.return_book()
+        return False
+
+    def list_available_books(self) -> None:
+        """
+        Print all available books in the format:
+        <title> by <author>
+        """
+        for b in self._books:
+            if not b.is_checked_out:
+                print(str(b))
